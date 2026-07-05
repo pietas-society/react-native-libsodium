@@ -86,6 +86,11 @@ declare global {
     variant: base64_variants
   ): string;
   function jsi_to_hex(input: string | ArrayBuffer): string;
+  function jsi_memzero(
+    buffer: ArrayBuffer,
+    offset: number,
+    length: number
+  ): void;
   function jsi_randombytes_buf(length: number): ArrayBuffer;
   function jsi_randombytes_uniform(upper_bound: number): number;
   function jsi_crypto_secretbox_keygen(): ArrayBuffer;
@@ -269,6 +274,21 @@ export const to_base64 = (
 export function to_hex(input: string | Uint8Array): string {
   const inputParam = typeof input === 'string' ? input : toArrayBuffer(input);
   return global.jsi_to_hex(inputParam);
+}
+
+export function memzero(bytes: Uint8Array): void {
+  if (!(bytes instanceof Uint8Array)) {
+    throw new TypeError('Only Uint8Array instances can be wiped');
+  }
+  // the view's underlying buffer is passed to sodium_memzero so the bytes
+  // are wiped in place instead of on a copy
+  const buffer = bytes.buffer;
+  if (!(buffer instanceof ArrayBuffer)) {
+    throw new TypeError(
+      'Only ArrayBuffer backed Uint8Array instances can be wiped'
+    );
+  }
+  global.jsi_memzero(buffer, bytes.byteOffset, bytes.byteLength);
 }
 
 export function randombytes_buf(
@@ -990,6 +1010,7 @@ export default {
   crypto_sign_keypair,
   crypto_sign_verify_detached,
   from_base64,
+  memzero,
   randombytes_buf,
   randombytes_uniform,
   ready,

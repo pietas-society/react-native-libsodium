@@ -358,6 +358,43 @@ namespace ReactNativeLibsodium
 
         jsiRuntime.global().setProperty(jsiRuntime, "jsi_to_hex", std::move(jsi_to_hex));
 
+        auto jsi_memzero = jsi::Function::createFromHostFunction(
+            jsiRuntime,
+            jsi::PropNameID::forUtf8(jsiRuntime, "jsi_memzero"),
+            3,
+            [](jsi::Runtime &runtime, const jsi::Value &thisValue, const jsi::Value *arguments, size_t count) -> jsi::Value
+            {
+                const std::string functionName = "memzero";
+
+                std::string bufferArgumentName = "buffer";
+                unsigned int bufferArgumentPosition = 0;
+                validateIsArrayBuffer(functionName, runtime, arguments[bufferArgumentPosition], bufferArgumentName, true);
+
+                std::string offsetArgumentName = "offset";
+                unsigned int offsetArgumentPosition = 1;
+                validateIsNumber(functionName, runtime, arguments[offsetArgumentPosition], offsetArgumentName, true);
+
+                std::string lengthArgumentName = "length";
+                unsigned int lengthArgumentPosition = 2;
+                validateIsNumber(functionName, runtime, arguments[lengthArgumentPosition], lengthArgumentName, true);
+
+                auto bufferArrayBuffer = arguments[bufferArgumentPosition].asObject(runtime).getArrayBuffer(runtime);
+                double offset = arguments[offsetArgumentPosition].asNumber();
+                double length = arguments[lengthArgumentPosition].asNumber();
+
+                if (offset < 0 || length < 0 || offset + length > bufferArrayBuffer.length(runtime))
+                {
+                    throw jsi::JSError(runtime, "invalid offset or length");
+                }
+
+                // wipe the ArrayBuffer's actual backing memory so the change is
+                // visible to the caller's Uint8Array view
+                sodium_memzero(bufferArrayBuffer.data(runtime) + static_cast<size_t>(offset), static_cast<size_t>(length));
+                return jsi::Value::undefined();
+            });
+
+        jsiRuntime.global().setProperty(jsiRuntime, "jsi_memzero", std::move(jsi_memzero));
+
         auto jsi_randombytes_buf = jsi::Function::createFromHostFunction(
             jsiRuntime,
             jsi::PropNameID::forUtf8(jsiRuntime, "jsi_randombytes_buf"),
