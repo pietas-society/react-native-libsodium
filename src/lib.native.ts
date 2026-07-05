@@ -179,19 +179,13 @@ declare global {
   ): ArrayBuffer;
   function jsi_crypto_aead_xchacha20poly1305_ietf_encrypt(
     message: string | ArrayBuffer,
-    additionalData: string,
+    additionalData: string | ArrayBuffer | null,
     public_nonce: ArrayBuffer,
     key: ArrayBuffer
   ): ArrayBuffer;
   function jsi_crypto_aead_xchacha20poly1305_ietf_decrypt(
     ciphertext: string | ArrayBuffer,
-    additionalData: string,
-    public_nonce: ArrayBuffer,
-    key: ArrayBuffer
-  ): ArrayBuffer;
-  function jsi_crypto_aead_xchacha20poly1305_ietf_decrypt(
-    ciphertext: string | ArrayBuffer,
-    additionalData: string,
+    additionalData: string | ArrayBuffer | null,
     public_nonce: ArrayBuffer,
     key: ArrayBuffer
   ): ArrayBuffer;
@@ -869,14 +863,13 @@ export function crypto_aead_xchacha20poly1305_ietf_encrypt(
   let result: ArrayBuffer;
   const messageParam =
     typeof message === 'string' ? message : toArrayBuffer(message);
-  if (typeof additional_data !== 'string') {
-    throw new Error(
-      'crypto_aead_xchacha20poly1305_ietf_encrypt: input type not yet implemented'
-    );
-  }
+  const additionalDataParam =
+    additional_data == null || typeof additional_data === 'string'
+      ? additional_data
+      : toArrayBuffer(additional_data);
   result = global.jsi_crypto_aead_xchacha20poly1305_ietf_encrypt(
     messageParam,
-    additional_data,
+    additionalDataParam,
     toArrayBuffer(public_nonce),
     toArrayBuffer(key)
   );
@@ -913,16 +906,15 @@ export function crypto_aead_xchacha20poly1305_ietf_decrypt(
       'crypto_aead_xchacha20poly1305_ietf_decrypt: input type not yet implemented'
     );
   }
-  if (typeof additional_data !== 'string') {
-    throw new Error(
-      'crypto_aead_xchacha20poly1305_ietf_decrypt: input type not yet implemented'
-    );
-  }
   const ciphertextParam =
     typeof ciphertext === 'string' ? ciphertext : toArrayBuffer(ciphertext);
+  const additionalDataParam =
+    additional_data == null || typeof additional_data === 'string'
+      ? additional_data
+      : toArrayBuffer(additional_data);
   result = global.jsi_crypto_aead_xchacha20poly1305_ietf_decrypt(
     ciphertextParam,
-    additional_data,
+    additionalDataParam,
     toArrayBuffer(public_nonce),
     toArrayBuffer(key)
   );

@@ -1,5 +1,6 @@
 #include "react-native-libsodium.h"
 #include <sodium.h> // libsodium
+#include <optional>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -1335,7 +1336,7 @@ namespace ReactNativeLibsodium
 
                 std::string additionalDataArgumentName = "additionalData";
                 unsigned int additionalDataArgumentPosition = 1;
-                validateIsString(functionName, runtime, arguments[additionalDataArgumentPosition], additionalDataArgumentName, true);
+                JsiArgType additionalDataArgType = validateIsStringOrArrayBuffer(functionName, runtime, arguments[additionalDataArgumentPosition], additionalDataArgumentName, false);
 
                 std::string publicNonceArgumentName = "public_nonce";
                 unsigned int publicNonceArgumentPosition = 2;
@@ -1345,7 +1346,23 @@ namespace ReactNativeLibsodium
                 unsigned int keyArgumentPosition = 3;
                 validateIsArrayBuffer(functionName, runtime, arguments[keyArgumentPosition], keyArgumentName, true);
 
-                std::string additionalData = arguments[additionalDataArgumentPosition].asString(runtime).utf8(runtime);
+                std::string additionalDataString;
+                std::optional<jsi::ArrayBuffer> additionalDataArrayBuffer;
+                const unsigned char *additionalDataData = NULL;
+                unsigned long long additionalDataLength = 0;
+                if (additionalDataArgType == JsiArgType::string)
+                {
+                    additionalDataString = arguments[additionalDataArgumentPosition].asString(runtime).utf8(runtime);
+                    additionalDataData = reinterpret_cast<const unsigned char *>(additionalDataString.data());
+                    additionalDataLength = additionalDataString.length();
+                }
+                else if (additionalDataArgType == JsiArgType::arrayBuffer)
+                {
+                    additionalDataArrayBuffer.emplace(arguments[additionalDataArgumentPosition].asObject(runtime).getArrayBuffer(runtime));
+                    additionalDataData = additionalDataArrayBuffer->data(runtime);
+                    additionalDataLength = additionalDataArrayBuffer->length(runtime);
+                }
+
                 auto publicNonceArrayBuffer =
                     arguments[publicNonceArgumentPosition].asObject(runtime).getArrayBuffer(runtime);
                 auto keyArrayBuffer =
@@ -1373,8 +1390,8 @@ namespace ReactNativeLibsodium
                         &ciphertextLength,
                         reinterpret_cast<const unsigned char *>(messageString.data()),
                         messageString.length(),
-                        reinterpret_cast<const unsigned char *>(additionalData.data()),
-                        additionalData.length(),
+                        additionalDataData,
+                        additionalDataLength,
                         NULL,
                         publicNonceArrayBuffer.data(runtime),
                         keyArrayBuffer.data(runtime));
@@ -1390,8 +1407,8 @@ namespace ReactNativeLibsodium
                         &ciphertextLength,
                         messageArrayBuffer.data(runtime),
                         messageArrayBuffer.length(runtime),
-                        reinterpret_cast<const unsigned char *>(additionalData.data()),
-                        additionalData.length(),
+                        additionalDataData,
+                        additionalDataLength,
                         NULL,
                         publicNonceArrayBuffer.data(runtime),
                         keyArrayBuffer.data(runtime));
@@ -1417,7 +1434,7 @@ namespace ReactNativeLibsodium
 
                 std::string additionalDataArgumentName = "additionalData";
                 unsigned int additionalDataArgumentPosition = 1;
-                validateIsString(functionName, runtime, arguments[additionalDataArgumentPosition], additionalDataArgumentName, true);
+                JsiArgType additionalDataArgType = validateIsStringOrArrayBuffer(functionName, runtime, arguments[additionalDataArgumentPosition], additionalDataArgumentName, false);
 
                 std::string publicNonceArgumentName = "public_nonce";
                 unsigned int publicNonceArgumentPosition = 2;
@@ -1427,7 +1444,23 @@ namespace ReactNativeLibsodium
                 unsigned int keyArgumentPosition = 3;
                 validateIsArrayBuffer(functionName, runtime, arguments[keyArgumentPosition], keyArgumentName, true);
 
-                std::string additionalData = arguments[additionalDataArgumentPosition].asString(runtime).utf8(runtime);
+                std::string additionalDataString;
+                std::optional<jsi::ArrayBuffer> additionalDataArrayBuffer;
+                const unsigned char *additionalDataData = NULL;
+                unsigned long long additionalDataLength = 0;
+                if (additionalDataArgType == JsiArgType::string)
+                {
+                    additionalDataString = arguments[additionalDataArgumentPosition].asString(runtime).utf8(runtime);
+                    additionalDataData = reinterpret_cast<const unsigned char *>(additionalDataString.data());
+                    additionalDataLength = additionalDataString.length();
+                }
+                else if (additionalDataArgType == JsiArgType::arrayBuffer)
+                {
+                    additionalDataArrayBuffer.emplace(arguments[additionalDataArgumentPosition].asObject(runtime).getArrayBuffer(runtime));
+                    additionalDataData = additionalDataArrayBuffer->data(runtime);
+                    additionalDataLength = additionalDataArrayBuffer->length(runtime);
+                }
+
                 auto publicNonceArrayBuffer =
                     arguments[publicNonceArgumentPosition].asObject(runtime).getArrayBuffer(runtime);
                 auto keyArrayBuffer =
@@ -1456,8 +1489,8 @@ namespace ReactNativeLibsodium
                         NULL,
                         reinterpret_cast<const unsigned char *>(ciphertextString.data()),
                         ciphertextString.length(),
-                        reinterpret_cast<const unsigned char *>(additionalData.data()),
-                        additionalData.length(),
+                        additionalDataData,
+                        additionalDataLength,
                         publicNonceArrayBuffer.data(runtime),
                         keyArrayBuffer.data(runtime));
                 }
@@ -1473,8 +1506,8 @@ namespace ReactNativeLibsodium
                         NULL,
                         ciphertextArrayBuffer.data(runtime),
                         ciphertextArrayBuffer.length(runtime),
-                        reinterpret_cast<const unsigned char *>(additionalData.data()),
-                        additionalData.length(),
+                        additionalDataData,
+                        additionalDataLength,
                         publicNonceArrayBuffer.data(runtime),
                         keyArrayBuffer.data(runtime));
                 }
