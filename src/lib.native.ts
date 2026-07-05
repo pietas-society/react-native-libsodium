@@ -1,6 +1,12 @@
 export { base64_variants, to_string } from './libsodium-js-utils';
-import type { KeyPair, StringKeyPair } from './libsodium-types';
 import type {
+  KeyPair,
+  MessageTag,
+  StringKeyPair,
+  StringMessageTag,
+} from './libsodium-types';
+import type {
+  StateAddress,
   StringOutputFormat,
   Uint8ArrayOutputFormat,
 } from 'libsodium-wrappers';
@@ -66,6 +72,13 @@ declare global {
   var jsi_crypto_kdf_hkdf_sha256_BYTES_MIN: number;
   var jsi_crypto_kdf_hkdf_sha256_KEYBYTES: number;
   var jsi_crypto_pwhash_ALG_ARGON2ID13: number;
+  var jsi_crypto_secretstream_xchacha20poly1305_ABYTES: number;
+  var jsi_crypto_secretstream_xchacha20poly1305_HEADERBYTES: number;
+  var jsi_crypto_secretstream_xchacha20poly1305_KEYBYTES: number;
+  var jsi_crypto_secretstream_xchacha20poly1305_TAG_MESSAGE: number;
+  var jsi_crypto_secretstream_xchacha20poly1305_TAG_PUSH: number;
+  var jsi_crypto_secretstream_xchacha20poly1305_TAG_REKEY: number;
+  var jsi_crypto_secretstream_xchacha20poly1305_TAG_FINAL: number;
 
   function jsi_crypto_auth(
     message: string | ArrayBuffer,
@@ -189,6 +202,28 @@ declare global {
     public_nonce: ArrayBuffer,
     key: ArrayBuffer
   ): ArrayBuffer;
+  function jsi_crypto_secretstream_xchacha20poly1305_keygen(): ArrayBuffer;
+  function jsi_crypto_secretstream_xchacha20poly1305_init_push(
+    key: ArrayBuffer
+  ): {
+    state: ArrayBuffer;
+    header: ArrayBuffer;
+  };
+  function jsi_crypto_secretstream_xchacha20poly1305_push(
+    state: ArrayBuffer,
+    message: string | ArrayBuffer,
+    additionalData: string | ArrayBuffer | null,
+    tag: number
+  ): ArrayBuffer;
+  function jsi_crypto_secretstream_xchacha20poly1305_init_pull(
+    header: ArrayBuffer,
+    key: ArrayBuffer
+  ): ArrayBuffer;
+  function jsi_crypto_secretstream_xchacha20poly1305_pull(
+    state: ArrayBuffer,
+    cipher: string | ArrayBuffer,
+    additionalData: string | ArrayBuffer | null
+  ): { message: ArrayBuffer; tag: number } | false;
   function jsi_crypto_kdf_hkdf_sha256_extract(
     key: ArrayBuffer,
     salt: ArrayBuffer
@@ -246,6 +281,20 @@ export const _unstable_crypto_kdf_hkdf_sha256_KEYBYTES =
   global.jsi_crypto_kdf_hkdf_sha256_KEYBYTES;
 export const crypto_pwhash_ALG_ARGON2ID13 =
   global.jsi_crypto_pwhash_ALG_ARGON2ID13;
+export const crypto_secretstream_xchacha20poly1305_ABYTES =
+  global.jsi_crypto_secretstream_xchacha20poly1305_ABYTES;
+export const crypto_secretstream_xchacha20poly1305_HEADERBYTES =
+  global.jsi_crypto_secretstream_xchacha20poly1305_HEADERBYTES;
+export const crypto_secretstream_xchacha20poly1305_KEYBYTES =
+  global.jsi_crypto_secretstream_xchacha20poly1305_KEYBYTES;
+export const crypto_secretstream_xchacha20poly1305_TAG_MESSAGE =
+  global.jsi_crypto_secretstream_xchacha20poly1305_TAG_MESSAGE;
+export const crypto_secretstream_xchacha20poly1305_TAG_PUSH =
+  global.jsi_crypto_secretstream_xchacha20poly1305_TAG_PUSH;
+export const crypto_secretstream_xchacha20poly1305_TAG_REKEY =
+  global.jsi_crypto_secretstream_xchacha20poly1305_TAG_REKEY;
+export const crypto_secretstream_xchacha20poly1305_TAG_FINAL =
+  global.jsi_crypto_secretstream_xchacha20poly1305_TAG_FINAL;
 
 export const from_base64 = (
   input: string,
@@ -921,6 +970,142 @@ export function crypto_aead_xchacha20poly1305_ietf_decrypt(
   return convertToOutputFormat(result, outputFormat);
 }
 
+// The secretstream state is an opaque handle. On native it is the raw
+// crypto_secretstream_xchacha20poly1305_state bytes in an ArrayBuffer which
+// push and pull advance in place. It is typed as StateAddress to match the
+// libsodium-wrappers API and must not be inspected or modified by callers.
+export function crypto_secretstream_xchacha20poly1305_keygen(
+  outputFormat?: Uint8ArrayOutputFormat | null
+): Uint8Array;
+export function crypto_secretstream_xchacha20poly1305_keygen(
+  outputFormat: StringOutputFormat
+): string;
+export function crypto_secretstream_xchacha20poly1305_keygen(
+  outputFormat: OutputFormat
+): unknown {
+  const result = global.jsi_crypto_secretstream_xchacha20poly1305_keygen();
+  return convertToOutputFormat(result, outputFormat);
+}
+
+export function crypto_secretstream_xchacha20poly1305_init_push(
+  key: Uint8Array,
+  outputFormat?: Uint8ArrayOutputFormat | null
+): { state: StateAddress; header: Uint8Array };
+export function crypto_secretstream_xchacha20poly1305_init_push(
+  key: Uint8Array,
+  outputFormat: StringOutputFormat
+): { state: StateAddress; header: string };
+export function crypto_secretstream_xchacha20poly1305_init_push(
+  key: Uint8Array,
+  outputFormat: OutputFormat
+): unknown {
+  const result = global.jsi_crypto_secretstream_xchacha20poly1305_init_push(
+    toArrayBuffer(key)
+  );
+  return {
+    state: result.state as unknown as StateAddress,
+    header: convertToOutputFormat(result.header, outputFormat),
+  };
+}
+
+export function crypto_secretstream_xchacha20poly1305_push(
+  state_address: StateAddress,
+  message_chunk: string | Uint8Array,
+  ad: string | Uint8Array | null,
+  tag: number,
+  outputFormat?: Uint8ArrayOutputFormat | null
+): Uint8Array;
+export function crypto_secretstream_xchacha20poly1305_push(
+  state_address: StateAddress,
+  message_chunk: string | Uint8Array,
+  ad: string | Uint8Array | null,
+  tag: number,
+  outputFormat: StringOutputFormat
+): string;
+export function crypto_secretstream_xchacha20poly1305_push(
+  state_address: StateAddress,
+  message_chunk: string | Uint8Array,
+  ad: string | Uint8Array | null,
+  tag: number,
+  outputFormat: OutputFormat
+): unknown {
+  if (tag == null) {
+    throw new TypeError('tag cannot be null or undefined');
+  }
+  // eslint-disable-next-line no-bitwise
+  if (typeof tag !== 'number' || (tag | 0) !== tag || tag < 0) {
+    throw new TypeError('tag must be an unsigned integer');
+  }
+  const messageParam =
+    typeof message_chunk === 'string'
+      ? message_chunk
+      : toArrayBuffer(message_chunk);
+  const adParam =
+    ad == null ? null : typeof ad === 'string' ? ad : toArrayBuffer(ad);
+  const result = global.jsi_crypto_secretstream_xchacha20poly1305_push(
+    state_address as unknown as ArrayBuffer,
+    messageParam,
+    adParam,
+    tag
+  );
+  return convertToOutputFormat(result, outputFormat);
+}
+
+export function crypto_secretstream_xchacha20poly1305_init_pull(
+  header: Uint8Array,
+  key: Uint8Array
+): StateAddress {
+  const result = global.jsi_crypto_secretstream_xchacha20poly1305_init_pull(
+    toArrayBuffer(header),
+    toArrayBuffer(key)
+  );
+  return result as unknown as StateAddress;
+}
+
+export function crypto_secretstream_xchacha20poly1305_pull(
+  state_address: StateAddress,
+  cipher: string | Uint8Array,
+  ad?: string | Uint8Array | null,
+  outputFormat?: Uint8ArrayOutputFormat | null
+): MessageTag | false;
+export function crypto_secretstream_xchacha20poly1305_pull(
+  state_address: StateAddress,
+  cipher: string | Uint8Array,
+  ad: string | Uint8Array | null,
+  outputFormat: StringOutputFormat
+): StringMessageTag | false;
+export function crypto_secretstream_xchacha20poly1305_pull(
+  state_address: StateAddress,
+  cipher: string | Uint8Array,
+  ad?: string | Uint8Array | null,
+  outputFormat?: OutputFormat
+): unknown {
+  if (
+    cipher instanceof Uint8Array &&
+    cipher.length < crypto_secretstream_xchacha20poly1305_ABYTES
+  ) {
+    throw new TypeError('cipher is too short');
+  }
+  const cipherParam =
+    typeof cipher === 'string' ? cipher : toArrayBuffer(cipher);
+  const adParam =
+    ad == null ? null : typeof ad === 'string' ? ad : toArrayBuffer(ad);
+  const result = global.jsi_crypto_secretstream_xchacha20poly1305_pull(
+    state_address as unknown as ArrayBuffer,
+    cipherParam,
+    adParam
+  );
+  // matching the libsodium-wrappers behavior of returning false instead of
+  // throwing when the ciphertext is invalid
+  if (result === false) {
+    return false;
+  }
+  return {
+    message: convertToOutputFormat(result.message, outputFormat),
+    tag: result.tag,
+  };
+}
+
 export function _unstable_crypto_kdf_hkdf_sha256_extract(
   key: Uint8Array,
   salt: Uint8Array
@@ -998,6 +1183,18 @@ export default {
   crypto_secretbox_keygen,
   crypto_secretbox_NONCEBYTES,
   crypto_secretbox_open_easy,
+  crypto_secretstream_xchacha20poly1305_ABYTES,
+  crypto_secretstream_xchacha20poly1305_HEADERBYTES,
+  crypto_secretstream_xchacha20poly1305_init_pull,
+  crypto_secretstream_xchacha20poly1305_init_push,
+  crypto_secretstream_xchacha20poly1305_KEYBYTES,
+  crypto_secretstream_xchacha20poly1305_keygen,
+  crypto_secretstream_xchacha20poly1305_pull,
+  crypto_secretstream_xchacha20poly1305_push,
+  crypto_secretstream_xchacha20poly1305_TAG_FINAL,
+  crypto_secretstream_xchacha20poly1305_TAG_MESSAGE,
+  crypto_secretstream_xchacha20poly1305_TAG_PUSH,
+  crypto_secretstream_xchacha20poly1305_TAG_REKEY,
   crypto_sign_detached,
   crypto_sign_keypair,
   crypto_sign_verify_detached,

@@ -25,6 +25,7 @@ import '../tests/crypto_sign_ed25519_pk_to_curve25519_test';
 import '../tests/crypto_secretbox_easy_test';
 import '../tests/crypto_secretbox_keygen_test';
 import '../tests/crypto_secretbox_open_easy_test';
+import '../tests/crypto_secretstream_xchacha20poly1305_test';
 import '../tests/crypto_sign_detached_test';
 import '../tests/crypto_sign_keypair_test';
 import '../tests/crypto_sign_seed_keypair_test';
