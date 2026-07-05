@@ -207,6 +207,9 @@ namespace ReactNativeLibsodium
         jsiRuntime.global().setProperty(jsiRuntime, "jsi_crypto_pwhash_BYTES_MIN", static_cast<int>(crypto_pwhash_BYTES_MIN));
         jsiRuntime.global().setProperty(jsiRuntime, "jsi_crypto_generichash_KEYBYTES_MIN", static_cast<int>(crypto_generichash_KEYBYTES_MIN));
         jsiRuntime.global().setProperty(jsiRuntime, "jsi_crypto_generichash_KEYBYTES_MAX", static_cast<int>(crypto_generichash_KEYBYTES_MAX));
+        jsiRuntime.global().setProperty(jsiRuntime, "jsi_crypto_hash_BYTES", static_cast<int>(crypto_hash_BYTES));
+        jsiRuntime.global().setProperty(jsiRuntime, "jsi_crypto_hash_sha256_BYTES", static_cast<int>(crypto_hash_sha256_BYTES));
+        jsiRuntime.global().setProperty(jsiRuntime, "jsi_crypto_hash_sha512_BYTES", static_cast<int>(crypto_hash_sha512_BYTES));
         jsiRuntime.global().setProperty(jsiRuntime, "jsi_crypto_sign_SEEDBYTES", static_cast<int>(crypto_sign_SEEDBYTES));
         jsiRuntime.global().setProperty(jsiRuntime, "jsi_crypto_auth_BYTES", static_cast<int>(crypto_auth_BYTES));
         jsiRuntime.global().setProperty(jsiRuntime, "jsi_crypto_auth_KEYBYTES", static_cast<int>(crypto_auth_KEYBYTES));
@@ -1525,6 +1528,102 @@ namespace ReactNativeLibsodium
             });
 
         jsiRuntime.global().setProperty(jsiRuntime, "jsi_crypto_generichash", std::move(jsi_crypto_generichash));
+
+        auto jsi_crypto_hash = jsi::Function::createFromHostFunction(
+            jsiRuntime,
+            jsi::PropNameID::forUtf8(jsiRuntime, "jsi_crypto_hash"),
+            1,
+            [](jsi::Runtime &runtime, const jsi::Value &thisValue, const jsi::Value *arguments, size_t count) -> jsi::Value
+            {
+                const std::string functionName = "crypto_hash";
+
+                std::string messageArgumentName = "message";
+                unsigned int messageArgumentPosition = 0;
+                JsiArgType messageArgType = validateIsStringOrArrayBuffer(functionName, runtime, arguments[messageArgumentPosition], messageArgumentName, true);
+
+                std::vector<uint8_t> hash(crypto_hash_BYTES);
+                int result = -1;
+
+                if (messageArgType == JsiArgType::string)
+                {
+                    std::string messageString = arguments[messageArgumentPosition].asString(runtime).utf8(runtime);
+                    result = crypto_hash(hash.data(), reinterpret_cast<const unsigned char *>(messageString.data()), messageString.length());
+                }
+                else
+                {
+                    auto messageArrayBuffer = arguments[messageArgumentPosition].asObject(runtime).getArrayBuffer(runtime);
+                    result = crypto_hash(hash.data(), messageArrayBuffer.data(runtime), messageArrayBuffer.length(runtime));
+                }
+
+                throwOnBadResult(functionName, runtime, result);
+                return arrayBufferAsObject(runtime, hash);
+            });
+
+        jsiRuntime.global().setProperty(jsiRuntime, "jsi_crypto_hash", std::move(jsi_crypto_hash));
+
+        auto jsi_crypto_hash_sha256 = jsi::Function::createFromHostFunction(
+            jsiRuntime,
+            jsi::PropNameID::forUtf8(jsiRuntime, "jsi_crypto_hash_sha256"),
+            1,
+            [](jsi::Runtime &runtime, const jsi::Value &thisValue, const jsi::Value *arguments, size_t count) -> jsi::Value
+            {
+                const std::string functionName = "crypto_hash_sha256";
+
+                std::string messageArgumentName = "message";
+                unsigned int messageArgumentPosition = 0;
+                JsiArgType messageArgType = validateIsStringOrArrayBuffer(functionName, runtime, arguments[messageArgumentPosition], messageArgumentName, true);
+
+                std::vector<uint8_t> hash(crypto_hash_sha256_BYTES);
+                int result = -1;
+
+                if (messageArgType == JsiArgType::string)
+                {
+                    std::string messageString = arguments[messageArgumentPosition].asString(runtime).utf8(runtime);
+                    result = crypto_hash_sha256(hash.data(), reinterpret_cast<const unsigned char *>(messageString.data()), messageString.length());
+                }
+                else
+                {
+                    auto messageArrayBuffer = arguments[messageArgumentPosition].asObject(runtime).getArrayBuffer(runtime);
+                    result = crypto_hash_sha256(hash.data(), messageArrayBuffer.data(runtime), messageArrayBuffer.length(runtime));
+                }
+
+                throwOnBadResult(functionName, runtime, result);
+                return arrayBufferAsObject(runtime, hash);
+            });
+
+        jsiRuntime.global().setProperty(jsiRuntime, "jsi_crypto_hash_sha256", std::move(jsi_crypto_hash_sha256));
+
+        auto jsi_crypto_hash_sha512 = jsi::Function::createFromHostFunction(
+            jsiRuntime,
+            jsi::PropNameID::forUtf8(jsiRuntime, "jsi_crypto_hash_sha512"),
+            1,
+            [](jsi::Runtime &runtime, const jsi::Value &thisValue, const jsi::Value *arguments, size_t count) -> jsi::Value
+            {
+                const std::string functionName = "crypto_hash_sha512";
+
+                std::string messageArgumentName = "message";
+                unsigned int messageArgumentPosition = 0;
+                JsiArgType messageArgType = validateIsStringOrArrayBuffer(functionName, runtime, arguments[messageArgumentPosition], messageArgumentName, true);
+
+                std::vector<uint8_t> hash(crypto_hash_sha512_BYTES);
+                int result = -1;
+
+                if (messageArgType == JsiArgType::string)
+                {
+                    std::string messageString = arguments[messageArgumentPosition].asString(runtime).utf8(runtime);
+                    result = crypto_hash_sha512(hash.data(), reinterpret_cast<const unsigned char *>(messageString.data()), messageString.length());
+                }
+                else
+                {
+                    auto messageArrayBuffer = arguments[messageArgumentPosition].asObject(runtime).getArrayBuffer(runtime);
+                    result = crypto_hash_sha512(hash.data(), messageArrayBuffer.data(runtime), messageArrayBuffer.length(runtime));
+                }
+
+                throwOnBadResult(functionName, runtime, result);
+                return arrayBufferAsObject(runtime, hash);
+            });
+
+        jsiRuntime.global().setProperty(jsiRuntime, "jsi_crypto_hash_sha512", std::move(jsi_crypto_hash_sha512));
 
         auto jsi_crypto_kdf_hkdf_sha256_extract = jsi::Function::createFromHostFunction(
             jsiRuntime,

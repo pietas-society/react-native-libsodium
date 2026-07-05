@@ -52,6 +52,9 @@ declare global {
   var jsi_crypto_generichash_KEYBYTES: number;
   var jsi_crypto_generichash_KEYBYTES_MIN: number;
   var jsi_crypto_generichash_KEYBYTES_MAX: number;
+  var jsi_crypto_hash_BYTES: number;
+  var jsi_crypto_hash_sha256_BYTES: number;
+  var jsi_crypto_hash_sha512_BYTES: number;
   var jsi_crypto_sign_SEEDBYTES: number;
   var jsi_crypto_pwhash_SALTBYTES: number;
   var jsi_crypto_pwhash_ALG_DEFAULT: number;
@@ -149,6 +152,9 @@ declare global {
     message: string | ArrayBuffer,
     key?: ArrayBuffer | null | undefined
   ): ArrayBuffer;
+  function jsi_crypto_hash(message: string | ArrayBuffer): ArrayBuffer;
+  function jsi_crypto_hash_sha256(message: string | ArrayBuffer): ArrayBuffer;
+  function jsi_crypto_hash_sha512(message: string | ArrayBuffer): ArrayBuffer;
   function jsi_crypto_pwhash(
     keyLength: number,
     password: string | ArrayBuffer,
@@ -221,6 +227,9 @@ export const crypto_generichash_KEYBYTES_MIN =
   global.jsi_crypto_generichash_KEYBYTES_MIN;
 export const crypto_generichash_KEYBYTES_MAX =
   global.jsi_crypto_generichash_KEYBYTES_MAX;
+export const crypto_hash_BYTES = global.jsi_crypto_hash_BYTES;
+export const crypto_hash_sha256_BYTES = global.jsi_crypto_hash_sha256_BYTES;
+export const crypto_hash_sha512_BYTES = global.jsi_crypto_hash_sha512_BYTES;
 export const crypto_sign_SEEDBYTES = global.jsi_crypto_sign_SEEDBYTES;
 export const crypto_pwhash_SALTBYTES = global.jsi_crypto_pwhash_SALTBYTES;
 export const crypto_pwhash_ALG_DEFAULT = global.jsi_crypto_pwhash_ALG_DEFAULT;
@@ -676,6 +685,60 @@ export function crypto_generichash(
   return convertToOutputFormat(result, outputFormat);
 }
 
+export function crypto_hash(
+  message: string | Uint8Array,
+  outputFormat?: Uint8ArrayOutputFormat | null
+): Uint8Array;
+export function crypto_hash(
+  message: string | Uint8Array,
+  outputFormat: StringOutputFormat
+): string;
+export function crypto_hash(
+  message: string | Uint8Array,
+  outputFormat: OutputFormat
+): unknown {
+  const messageParam =
+    typeof message === 'string' ? message : toArrayBuffer(message);
+  const result = global.jsi_crypto_hash(messageParam);
+  return convertToOutputFormat(result, outputFormat);
+}
+
+export function crypto_hash_sha256(
+  message: string | Uint8Array,
+  outputFormat?: Uint8ArrayOutputFormat | null
+): Uint8Array;
+export function crypto_hash_sha256(
+  message: string | Uint8Array,
+  outputFormat: StringOutputFormat
+): string;
+export function crypto_hash_sha256(
+  message: string | Uint8Array,
+  outputFormat: OutputFormat
+): unknown {
+  const messageParam =
+    typeof message === 'string' ? message : toArrayBuffer(message);
+  const result = global.jsi_crypto_hash_sha256(messageParam);
+  return convertToOutputFormat(result, outputFormat);
+}
+
+export function crypto_hash_sha512(
+  message: string | Uint8Array,
+  outputFormat?: Uint8ArrayOutputFormat | null
+): Uint8Array;
+export function crypto_hash_sha512(
+  message: string | Uint8Array,
+  outputFormat: StringOutputFormat
+): string;
+export function crypto_hash_sha512(
+  message: string | Uint8Array,
+  outputFormat: OutputFormat
+): unknown {
+  const messageParam =
+    typeof message === 'string' ? message : toArrayBuffer(message);
+  const result = global.jsi_crypto_hash_sha512(messageParam);
+  return convertToOutputFormat(result, outputFormat);
+}
+
 export function crypto_pwhash(
   keyLength: number,
   password: string | Uint8Array,
@@ -899,6 +962,12 @@ export default {
   crypto_generichash_KEYBYTES,
   crypto_generichash_KEYBYTES_MIN,
   crypto_generichash_KEYBYTES_MAX,
+  crypto_hash,
+  crypto_hash_BYTES,
+  crypto_hash_sha256,
+  crypto_hash_sha256_BYTES,
+  crypto_hash_sha512,
+  crypto_hash_sha512_BYTES,
   crypto_kdf_derive_from_key,
   crypto_kdf_CONTEXTBYTES,
   crypto_kdf_KEYBYTES,
