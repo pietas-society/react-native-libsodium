@@ -113,6 +113,7 @@ import {
   crypto_sign_SEEDBYTES,
   crypto_sign_verify_detached,
   from_base64,
+  memcmp,
   memzero,
   randombytes_buf,
   randombytes_uniform,

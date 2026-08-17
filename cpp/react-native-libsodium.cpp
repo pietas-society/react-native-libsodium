@@ -394,6 +394,59 @@ namespace ReactNativeLibsodium
 
         jsiRuntime.global().setProperty(jsiRuntime, "jsi_to_hex", std::move(jsi_to_hex));
 
+        auto jsi_memcmp = jsi::Function::createFromHostFunction(
+            jsiRuntime,
+            jsi::PropNameID::forUtf8(jsiRuntime, "jsi_memcmp"),
+            5,
+            [](jsi::Runtime &runtime, const jsi::Value &thisValue, const jsi::Value *arguments, size_t count) -> jsi::Value
+            {
+                const std::string functionName = "memcmp";
+
+                std::string b1ArgumentName = "b1";
+                unsigned int b1ArgumentPosition = 0;
+                validateIsArrayBuffer(functionName, runtime, arguments[b1ArgumentPosition], b1ArgumentName, true);
+
+                std::string b1OffsetArgumentName = "b1Offset";
+                unsigned int b1OffsetArgumentPosition = 1;
+                validateIsNumber(functionName, runtime, arguments[b1OffsetArgumentPosition], b1OffsetArgumentName, true);
+
+                std::string b2ArgumentName = "b2";
+                unsigned int b2ArgumentPosition = 2;
+                validateIsArrayBuffer(functionName, runtime, arguments[b2ArgumentPosition], b2ArgumentName, true);
+
+                std::string b2OffsetArgumentName = "b2Offset";
+                unsigned int b2OffsetArgumentPosition = 3;
+                validateIsNumber(functionName, runtime, arguments[b2OffsetArgumentPosition], b2OffsetArgumentName, true);
+
+                std::string lengthArgumentName = "length";
+                unsigned int lengthArgumentPosition = 4;
+                validateIsNumber(functionName, runtime, arguments[lengthArgumentPosition], lengthArgumentName, true);
+
+                auto b1ArrayBuffer = arguments[b1ArgumentPosition].asObject(runtime).getArrayBuffer(runtime);
+                auto b2ArrayBuffer = arguments[b2ArgumentPosition].asObject(runtime).getArrayBuffer(runtime);
+                double b1Offset = arguments[b1OffsetArgumentPosition].asNumber();
+                double b2Offset = arguments[b2OffsetArgumentPosition].asNumber();
+                double length = arguments[lengthArgumentPosition].asNumber();
+
+                if (b1Offset < 0 || b2Offset < 0 || length < 0 ||
+                    b1Offset + length > b1ArrayBuffer.length(runtime) ||
+                    b2Offset + length > b2ArrayBuffer.length(runtime))
+                {
+                    throw jsi::JSError(runtime, "invalid offset or length");
+                }
+
+                // sodium_memcmp always reads the whole length, so the caller
+                // cannot time its way to the first differing byte — this is
+                // the reason to bind it rather than compare in JavaScript
+                int result = sodium_memcmp(
+                    b1ArrayBuffer.data(runtime) + static_cast<size_t>(b1Offset),
+                    b2ArrayBuffer.data(runtime) + static_cast<size_t>(b2Offset),
+                    static_cast<size_t>(length));
+                return jsi::Value(static_cast<bool>(result == 0));
+            });
+
+        jsiRuntime.global().setProperty(jsiRuntime, "jsi_memcmp", std::move(jsi_memcmp));
+
         auto jsi_memzero = jsi::Function::createFromHostFunction(
             jsiRuntime,
             jsi::PropNameID::forUtf8(jsiRuntime, "jsi_memzero"),
