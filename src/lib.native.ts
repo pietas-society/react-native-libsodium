@@ -99,6 +99,13 @@ declare global {
     variant: base64_variants
   ): string;
   function jsi_to_hex(input: string | ArrayBuffer): string;
+  function jsi_memcmp(
+    b1: ArrayBuffer,
+    b1Offset: number,
+    b2: ArrayBuffer,
+    b2Offset: number,
+    length: number
+  ): boolean;
   function jsi_memzero(
     buffer: ArrayBuffer,
     offset: number,
@@ -317,6 +324,32 @@ export const to_base64 = (
 export function to_hex(input: string | Uint8Array): string {
   const inputParam = typeof input === 'string' ? input : toArrayBuffer(input);
   return global.jsi_to_hex(inputParam);
+}
+
+export function memcmp(b1: Uint8Array, b2: Uint8Array): boolean {
+  if (!(b1 instanceof Uint8Array && b2 instanceof Uint8Array)) {
+    throw new TypeError('Only Uint8Array instances can be compared');
+  }
+  if (b1.length !== b2.length) {
+    throw new TypeError('Only instances of identical length can be compared');
+  }
+  // the views' underlying buffers are passed with their own offsets so a
+  // subarray is compared where it lies — copying the operands out would leave
+  // a second, unwiped copy of the compared secret on the heap
+  const b1Buffer = b1.buffer;
+  const b2Buffer = b2.buffer;
+  if (!(b1Buffer instanceof ArrayBuffer && b2Buffer instanceof ArrayBuffer)) {
+    throw new TypeError(
+      'Only ArrayBuffer backed Uint8Array instances can be compared'
+    );
+  }
+  return global.jsi_memcmp(
+    b1Buffer,
+    b1.byteOffset,
+    b2Buffer,
+    b2.byteOffset,
+    b1.byteLength
+  );
 }
 
 export function memzero(bytes: Uint8Array): void {
@@ -1199,6 +1232,7 @@ export default {
   crypto_sign_keypair,
   crypto_sign_verify_detached,
   from_base64,
+  memcmp,
   memzero,
   randombytes_buf,
   randombytes_uniform,
